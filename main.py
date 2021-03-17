@@ -7,6 +7,7 @@ import sys
 import time
 import random
 import re
+import gc
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('wb')
@@ -53,21 +54,23 @@ class Client:
         res.raise_for_status()
         res = res.text
         soup = bs4.BeautifulSoup(res, 'lxml')
-        container = soup.select_one('ul.maincatalog-list-2')
-        container = container.select('li')
+        container = soup.select('a.CatalogCategoryMenu__category')
 
         for block in container:
-            block = block.select_one('a')
             url = block.get('href')
+            url = url + '?view_type=list'
             logger.info(url)
             self.load_section(url)
 
 
     def load_section(self, text: str):
-        #time.sleep(random.randrange(0, 200, 1)/100)
+        time.sleep(random.randrange(0, 200, 1)/100)
         url_n = text
-        res = self.session.get(url=url_n)
-        res.raise_for_status()
+        try:
+            res = self.session.get(url=url_n)
+            res.raise_for_status()
+        except Exception:
+            return
         res = res.text
         soup = bs4.BeautifulSoup(res, 'lxml')
         container = soup.select('a.PaginationWidget__page.js--PaginationWidget__page.PaginationWidget__page_next.PaginationWidget__page-link')
@@ -79,6 +82,11 @@ class Client:
         if container:
             container = container[0]
             url = container.get('href')
+            soup = None
+            container = None
+            text_2 = None
+            res = None
+            gc.collect()
             return self.load_section(text=url)
         return
 
@@ -94,6 +102,8 @@ class Client:
         container = soup.select('div.product_data__gtm-js.product_data__pageevents-js.ProductCardHorizontal.js--ProductCardInListing.js--ProductCardInWishlist')
         for block in container:
             self.pars_block(block=block)
+        container = None
+        gc.collect()
 
     def pars_block(self, block):
         if block.select_one('ProductCardHorizontal__not-available-block') != None:
@@ -192,4 +202,16 @@ class Client:
 
 if __name__ == '__main__':
     parser = Client()
-    parser.load_section('https://www.citilink.ru/catalog/smartfony/')
+    parser.load_global_section('https://www.citilink.ru/catalog/smartfony-i-gadzhety/')
+    parser.load_global_section('https://www.citilink.ru/catalog/noutbuki-i-kompyutery/')
+    parser.load_global_section('https://www.citilink.ru/catalog/televizory-audio-video-hi-fi/')
+    parser.load_global_section('https://www.citilink.ru/catalog/bytovaya-tehnika-dlya-doma-i-kuhni/')
+    parser.load_global_section('https://www.citilink.ru/catalog/stroitelstvo-i-remont/')
+    parser.load_global_section('https://www.citilink.ru/catalog/foto-video-sistemy-bezopasnosti/')
+    parser.load_global_section('https://www.citilink.ru/catalog/avtotovary/')
+    parser.load_global_section('https://www.citilink.ru/catalog/kanctovary-mebel-i-ofisnaya-tehnika/')
+    parser.load_global_section('https://www.citilink.ru/catalog/krasota-i-zdorove/')
+    parser.load_global_section('https://www.citilink.ru/catalog/detskie-tovary/')
+    parser.load_global_section('https://www.citilink.ru/catalog/sport-i-otdyh/')
+    parser.load_global_section('https://www.citilink.ru/catalog/tovary-dlya-geimerov/')
+    parser.load_global_section('https://www.citilink.ru/catalog/dom-i-dacha/')
